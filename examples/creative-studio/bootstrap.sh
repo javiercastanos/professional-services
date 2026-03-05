@@ -122,7 +122,15 @@ start_sql_proxy() {
 
     # 2. Download Proxy (if missing)
     if [ ! -f "cloud-sql-proxy" ]; then
-        curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.8.0/cloud-sql-proxy.linux.amd64
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        
+        # Ajustar nombres de arquitectura para Google Storage
+        if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
+        if [ "$ARCH" = "arm64" ]; then ARCH="arm64"; fi
+
+        echo "➡️ Descargando proxy para $OS-$ARCH..."
+        curl -o cloud-sql-proxy "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.8.0/cloud-sql-proxy.$OS.$ARCH"
         chmod +x cloud-sql-proxy
     fi
 
