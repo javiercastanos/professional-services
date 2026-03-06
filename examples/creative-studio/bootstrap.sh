@@ -742,15 +742,35 @@ seed_data() {
 }
 
 
-
 trigger_builds() {
     step 14 "Triggering Initial Builds"; cd "$REPO_ROOT"
     prompt "Would you like to trigger the initial builds for the frontend and backend now? (y/n)"; read -r REPLY < /dev/tty
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then info "You can trigger the builds manually later by pushing a commit or via the Cloud Build UI."; return; fi
-    info "Triggering backend build..."; gcloud builds triggers run "${BE_SERVICE_NAME}-trigger" --branch="$GITHUB_BRANCH" --project="$GCP_PROJECT_ID" --region="us-central1"
-    info "Triggering frontend build..."; gcloud builds triggers run "$GCP_PROJECT_ID-trigger" --branch="$GITHUB_BRANCH" --project $GCP_PROJECT_ID --region="us-central1"
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then 
+        info "You can trigger the builds manually later by pushing a commit or via the Cloud Build UI."
+        return
+    fi
 
-    success "Builds have been triggered."; info "You can monitor their progress in the Cloud Build console:"; echo -e "   ${C_YELLOW}https://console.cloud.google.com/cloud-build/builds?project=${GCP_PROJECT_ID}${C_RESET}"
+    # Second Prompt: Capture Region
+    prompt "Which GCP region would you like to use? (default: us-central1)"; read -r DEPLOY_REGION < /dev/tty
+    
+    # Set default if the user hits Enter without typing
+    DEPLOY_REGION="${DEPLOY_REGION:-us-central1}"
+
+    info "Triggering backend build in ${DEPLOY_REGION}..."
+    gcloud builds triggers run "${BE_SERVICE_NAME}-trigger" \
+        --branch="$GITHUB_BRANCH" \
+        --project="$GCP_PROJECT_ID" \
+        --region="$DEPLOY_REGION"
+
+    info "Triggering frontend build in ${DEPLOY_REGION}..."
+    gcloud builds triggers run "$GCP_PROJECT_ID-trigger" \
+        --branch="$GITHUB_BRANCH" \
+        --project="$GCP_PROJECT_ID" \
+        --region="$DEPLOY_REGION"
+
+    success "Builds have been triggered."; 
+    info "You can monitor their progress in the Cloud Build console:"; 
+    echo -e "   ${C_YELLOW}https://console.cloud.google.com/cloud-build/builds?project=${GCP_PROJECT_ID}${C_RESET}"
 }
 
 # --- Main Execution ---
